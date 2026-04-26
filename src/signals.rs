@@ -17,6 +17,8 @@ impl SignalGenerator for SineWave {
 
 pub struct Oscilloscope {
     pub mode: Mode,
+    pub scale_x: f32,
+    pub scale_y: f32,
     pub x_gen: Box<dyn SignalGenerator>,
     pub y_gen: Box<dyn SignalGenerator>,
     pub time: f32,
@@ -26,6 +28,8 @@ impl Oscilloscope {
     pub fn new(mode: Mode) -> Self {
         Self {
             mode,
+            scale_x: 1.0,
+            scale_y: 1.0,
             x_gen: Box::new(SineWave {
                 frequency: 3.0,
                 phase: 0.0,
@@ -47,14 +51,14 @@ impl Oscilloscope {
 
             match self.mode {
                 Mode::AudioXy | Mode::Lissajous => {
-                    let x = self.x_gen.next_sample(self.time);
-                    let y = self.y_gen.next_sample(self.time);
+                    let x = self.x_gen.next_sample(self.time) * self.scale_x;
+                    let y = self.y_gen.next_sample(self.time) * self.scale_y;
                     points.push((x, y));
                 }
                 Mode::AudioYt => {
                     let sweep_freq = 0.5;
-                    let x = (self.time * sweep_freq % 1.0) * 2.0 - 1.0;
-                    let y = self.y_gen.next_sample(self.time);
+                    let x = ((self.time * sweep_freq % 1.0) * 2.0 - 1.0) * self.scale_x;
+                    let y = self.y_gen.next_sample(self.time) * self.scale_y;
                     points.push((x, y));
                 }
             }

@@ -70,4 +70,47 @@ impl TerminalBuffer {
             }
         }
     }
+
+    pub fn draw_text(&mut self, x: usize, y: usize, text: &str, fg: Rgb) {
+        if y >= self.height {
+            return;
+        }
+        for (i, ch) in text.chars().enumerate() {
+            let px = x + i;
+            if px < self.width {
+                self.cells[y * self.width + px] = TermCell { ch, fg };
+            }
+        }
+    }
+
+    pub fn draw_box(&mut self, x: usize, y: usize, w: usize, h: usize, title: &str, fg: Rgb) {
+        if x + h > self.width || y + h > self.height {
+            return;
+        }
+
+        let (tl, tr, bl, br) = ('┌', '┐', '└', '┘');
+        let (h_line, v_line) = ('─', '│');
+
+        for i in 1..(w - 1) {
+            self.cells[y * self.width + (x + i)] = TermCell { ch: h_line, fg };
+            self.cells[(y + h - 1) * self.width + (x + i)] = TermCell { ch: h_line, fg };
+        }
+
+        for j in 1..(h - 1) {
+            self.cells[(y + j) * self.width + x] = TermCell { ch: v_line, fg };
+            self.cells[(y + j) * self.width + (x + w - 1)] = TermCell { ch: v_line, fg };
+            for i in 1..(w - 1) {
+                self.cells[(y + j) * self.width + (x + i)] = TermCell { ch: ' ', fg };
+            }
+        }
+        self.cells[y * self.width + x] = TermCell { ch: tl, fg };
+        self.cells[y * self.width + (x + w - 1)] = TermCell { ch: tr, fg };
+        self.cells[(y + h - 1) * self.width + x] = TermCell { ch: bl, fg };
+        self.cells[(y + h - 1) * self.width + (x + w - 1)] = TermCell { ch: br, fg };
+
+        if !title.is_empty() {
+            let title_str = format!(" {} ", title);
+            self.draw_text(x + 2, y, &title_str, fg);
+        }
+    }
 }

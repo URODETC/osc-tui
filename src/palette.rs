@@ -15,8 +15,8 @@ impl Palette {
         match self {
             Palette::Green => ColorStops {
                 hot: (220.0, 255.0, 220.0),
-                bright: (81.0, 255.0, 50.0),
-                normal: (41.0, 180.0, 0.0),
+                bright: (80.0, 255.0, 50.0),
+                normal: (40.0, 180.0, 0.0),
                 dim: (0.0, 50.0, 0.0),
             },
             Palette::Amber => ColorStops {
@@ -73,6 +73,15 @@ impl Palette {
         let b = lerp(c1.2, c2.2, t);
 
         Rgb(r as u8, g as u8, b as u8)
+    }
+
+    pub fn ui_color(&self) -> Rgb {
+        let stops = self.stops();
+        Rgb(
+            stops.bright.0 as u8,
+            stops.bright.1 as u8,
+            stops.bright.2 as u8,
+        )
     }
 }
 fn lerp(a: f32, b: f32, t: f32) -> f32 {

@@ -20,7 +20,7 @@ impl FrameBuffer {
     }
 
     pub fn set_pixel(&mut self, x: isize, y: isize, brightness: f32) {
-        if x >= 0 && x < self.width as isize && y < self.height as isize {
+        if x >= 0 && y >= 0 && x < self.width as isize && y < self.height as isize {
             let idx = (y as usize) * self.width + (x as usize);
             self.pixels[idx] = (brightness).clamp(0.0, 1.0);
         }
