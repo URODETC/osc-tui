@@ -1,13 +1,14 @@
 use crate::cli::{Cli, Renderer};
 use crate::framebuffer::FrameBuffer;
 use crate::render::TerminalBuffer;
+use crate::signals::Oscilloscope;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use crossterm::{
     cursor, queue,
     style::{Color, Print, SetForegroundColor},
 };
 use std::io::{Result, Write, stdout};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 pub struct App {
     cli: Cli,
@@ -17,7 +18,7 @@ pub struct App {
     framebuffer: FrameBuffer,
     term_buffer: TerminalBuffer,
     prev_term_buffer: TerminalBuffer,
-    time: f32,
+    oscilloscope: Oscilloscope,
 }
 
 impl App {
@@ -30,6 +31,7 @@ impl App {
         };
 
         Ok(Self {
+            oscilloscope: Oscilloscope::new(cli.mode),
             cli,
             width,
             height,
@@ -37,15 +39,21 @@ impl App {
             framebuffer: FrameBuffer::new(sub_w, sub_h),
             term_buffer: TerminalBuffer::new(width as usize, height as usize),
             prev_term_buffer: TerminalBuffer::new(width as usize, height as usize),
-            time: 0.0,
         })
     }
 
     pub fn run(&mut self) -> Result<()> {
+        let frame_duration = Duration::from_secs_f32(1.0 / 60.0);
         while !self.should_quit {
+            let frame_start = Instant::now();
             self.handle_events()?;
             self.update();
             self.draw()?;
+
+            let elapsed = frame_start.elapsed();
+            if elapsed < frame_duration {
+                std::thread::sleep(frame_duration - elapsed);
+            }
         }
         Ok(())
     }
@@ -88,27 +96,16 @@ impl App {
     fn update(&mut self) {
         self.framebuffer.apply_decay(self.cli.decay);
 
-        self.time += 0.02;
+        let points = self.oscilloscope.generate_chunk(150, 0.05);
 
-        let a = 3.0;
-        let b = 2.0;
-        let delta = self.time;
+        let mut prev_point: Option<(f32, f32)> = None;
 
-        let mut prev_point: Option<(isize, isize)> = None;
-        let num_samples = 200;
-
-        for i in 0..num_samples {
-            let t = self.time + (i as f32 * 0.01);
-
-            let math_x = (a * t + delta).sin();
-            let math_y = (b * t).sin();
-
-            let (scr_x, scr_y) = self.framebuffer.map_coords(math_x, math_y);
-
+        for (math_x, math_y) in points {
+            let (screen_x, screen_y) = self.framebuffer.map_coords(math_x, math_y);
             if let Some((px, py)) = prev_point {
-                self.framebuffer.draw_line(px, py, scr_x, scr_y, 1.0);
+                self.framebuffer.draw_line(px, py, screen_x, screen_y, 1.0);
             }
-            prev_point = Some((scr_x, scr_y));
+            prev_point = Some((screen_x, screen_y));
         }
 
         match self.cli.renderer {

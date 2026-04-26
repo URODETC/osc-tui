@@ -46,7 +46,7 @@ impl TerminalBuffer {
 
                         if px < fb.width && py < fb.height {
                             let brightness = fb.pixels[py * fb.width + px];
-                            if brightness > 0.01 {
+                            if brightness > 0.06 {
                                 braille_bits |= dot_map[dy][dx];
                                 if brightness > max_brightness {
                                     max_brightness = brightness
